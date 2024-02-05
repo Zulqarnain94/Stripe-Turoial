@@ -12,9 +12,10 @@ namespace Controllers
   [ApiController]
   [Route("[controller]")]
 
- 
-  
-  public class PaymentController : ControllerBase {
+
+
+  public class PaymentController : ControllerBase
+  {
     private readonly StripeSettings _stripeSettings;
 
     public PaymentController(IOptions<StripeSettings> stripeSettings)
@@ -24,50 +25,46 @@ namespace Controllers
     }
 
     [HttpPost("create-checkout-session")]
-    public IActionResult CreateCheckoutSession([FromBody] PaymentRequest paymentRequest)
+    public ActionResult CreateCheckoutSession([FromBody] PaymentRequest request)
     {
-      try
+      var options = new SessionCreateOptions
       {
-        var currency = "usd";
-        var successUrl = "http://localhost:3000/success";
-        var cancelUrl = "http://localhost:3000/cancel";
-
-        var options = new SessionCreateOptions
+        PaymentMethodTypes = new List<string> { "card" },
+        LineItems = new List<SessionLineItemOptions>
         {
-          PaymentMethodTypes = new List<string> { "card" },
-          LineItems = new List<SessionLineItemOptions>
+            new SessionLineItemOptions
+            {
+                PriceData = new SessionLineItemPriceDataOptions
+                {
+                    UnitAmount = request.Amount*100,
+                    Currency = "usd",
+                    ProductData = new SessionLineItemPriceDataProductDataOptions
                     {
-                        new SessionLineItemOptions
-                        {
-                            PriceData = new SessionLineItemPriceDataOptions
-                            {
-                                Currency = currency,
-                                UnitAmount = paymentRequest.Amount * 100,  // Amount in cents
-                                ProductData = new SessionLineItemPriceDataProductDataOptions
-                                {
-                                    Name = "Product Name",
-                                    Description = "Product Description"
-                                }
-                            },
-                            Quantity = 1
-                        }
+                        Name = request.ProductName, // Use the provided product name
                     },
-          Mode = "payment",
-          SuccessUrl = successUrl,
-          CancelUrl = cancelUrl
-        };
+                },
+                Quantity = 1,
+            },
+        },
+        Mode = "payment",
+        SuccessUrl = "http://localhost:3000/success",
+        CancelUrl = "http://localhost:3000/cancel",
+        PaymentIntentData = new SessionPaymentIntentDataOptions
+        {
+          ReceiptEmail = request.CustomerEmail,
+        },
+      };
 
-        var service = new SessionService();
-        var session = service.Create(options);
-
-        return Ok(new { sessionId = session.Id });
-      }
-      catch (Exception ex)
-      {
-        // Log the exception for debugging purposes
-        Console.WriteLine($"Exception: {ex.Message}");
-        return StatusCode(500, "Internal Server Error");
-      }
+      var service = new SessionService();
+      Session session = service.Create(options);
+      return Ok(new { sessionId = session.Id });
     }
+
+
   }
 }
+
+
+
+// SuccessUrl = "http://localhost:3000/success",
+// CancelUrl = "http://localhost:3000/cancel",
