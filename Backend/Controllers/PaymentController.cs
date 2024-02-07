@@ -51,7 +51,10 @@ namespace Controllers
         CancelUrl = "http://localhost:3000/cancel",
         PaymentIntentData = new SessionPaymentIntentDataOptions
         {
-          ReceiptEmail = request.CustomerEmail,
+          // for the dynamic email adress
+         // ReceiptEmail = request.CustomerEmail,
+          ReceiptEmail = "sulqi1994@gmail.com",
+
         },
       };
 
